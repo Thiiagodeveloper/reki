@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { cardsDao, decksDao } from '@/src/lib/database';
@@ -109,7 +109,20 @@ export default function DeckDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: deck?.name ?? 'Deck' }} />
+      <Stack.Screen
+        options={{
+          title: deck?.name ?? 'Deck',
+          headerRight: () =>
+            cards.length > 0 ? (
+              <Pressable
+                onPress={() => router.push(`/study/${deckId}`)}
+                style={styles.studyHeaderBtn}
+              >
+                <Text style={styles.studyHeaderBtnText}>Study</Text>
+              </Pressable>
+            ) : null,
+        }}
+      />
 
       <FlatList
         data={cards}
@@ -316,6 +329,17 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 16,
     color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  studyHeaderBtn: {
+    backgroundColor: '#6C5CE7',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  studyHeaderBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

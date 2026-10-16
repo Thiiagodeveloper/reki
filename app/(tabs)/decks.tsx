@@ -88,15 +88,22 @@ export default function DecksScreen() {
             {item.description}
           </Text>
         ) : null}
-        <View style={styles.deckStats}>
-          <Text style={styles.statBadge}>
-            {item.cardCount} {item.cardCount === 1 ? 'card' : 'cards'}
-          </Text>
-          {item.newCount > 0 && (
-            <Text style={[styles.statBadge, styles.newBadge]}>{item.newCount} new</Text>
-          )}
-          {item.dueCount > 0 && (
-            <Text style={[styles.statBadge, styles.dueBadge]}>{item.dueCount} due</Text>
+        <View style={styles.deckFooter}>
+          <View style={styles.deckStats}>
+            <Text style={styles.statBadge}>
+              {item.cardCount} {item.cardCount === 1 ? 'card' : 'cards'}
+            </Text>
+            {item.newCount > 0 && (
+              <Text style={[styles.statBadge, styles.newBadge]}>{item.newCount} new</Text>
+            )}
+            {item.dueCount > 0 && (
+              <Text style={[styles.statBadge, styles.dueBadge]}>{item.dueCount} due</Text>
+            )}
+          </View>
+          {(item.newCount > 0 || item.dueCount > 0) && (
+            <Pressable style={styles.studyBtn} onPress={() => router.push(`/study/${item.id}`)}>
+              <Text style={styles.studyBtnText}>Study</Text>
+            </Pressable>
           )}
         </View>
       </Pressable>
@@ -210,10 +217,27 @@ const styles = StyleSheet.create({
     color: '#636E72',
     marginTop: 4,
   },
+  deckFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+  },
   deckStats: {
     flexDirection: 'row',
-    marginTop: 12,
     gap: 8,
+    flex: 1,
+  },
+  studyBtn: {
+    backgroundColor: '#6C5CE7',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  studyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   statBadge: {
     fontSize: 12,
