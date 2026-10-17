@@ -54,6 +54,7 @@ function RootLayoutNav() {
           name="study/[deckId]"
           options={{ headerShown: true, gestureEnabled: false }}
         />
+        <Stack.Screen name="import/index" options={{ title: 'Import', presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
