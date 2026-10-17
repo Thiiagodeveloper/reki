@@ -3,9 +3,11 @@ import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native
 import { useFocusEffect } from 'expo-router';
 
 import { studySessionsDao } from '@/src/lib/database';
+import { useThemeColors } from '@/src/hooks/useThemeColors';
 import type { DailyStats } from '@/src/lib/database/study-sessions.dao';
 
 export default function StatsScreen() {
+  const c = useThemeColors();
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [allTime, setAllTime] = useState({
     totalCards: 0,
@@ -53,25 +55,25 @@ export default function StatsScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: c.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <Text style={styles.sectionTitle}>All Time</Text>
+      <Text style={[styles.sectionTitle, { color: c.text }]}>All Time</Text>
       <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: c.surface }]}>
           <Text style={styles.statValue}>{allTime.totalCards}</Text>
           <Text style={styles.statLabel}>Cards Reviewed</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.statValue, { color: '#00B894' }]}>{allTime.avgAccuracy}%</Text>
           <Text style={styles.statLabel}>Avg Accuracy</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.statValue, { color: '#E17055' }]}>{streak}</Text>
           <Text style={styles.statLabel}>Day Streak</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={[styles.statCard, { backgroundColor: c.surface }]}>
           <Text style={styles.statValue}>{formatTime(allTime.totalTime)}</Text>
           <Text style={styles.statLabel}>Total Time</Text>
         </View>
