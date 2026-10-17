@@ -115,3 +115,72 @@ export async function getStreak(): Promise<number> {
 
   return streak;
 }
+
+export interface DailyStats {
+  date: string;
+  cardsStudied: number;
+  cardsCorrect: number;
+  totalTime: number;
+}
+
+export async function getLast30DaysStats(): Promise<DailyStats[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<{
+    study_date: string;
+    cards_studied: number;
+    cards_correct: number;
+    total_time: number;
+  }>(
+    `SELECT
+      date(started_at) as study_date,
+      COALESCE(SUM(cards_studied), 0) as cards_studied,
+      COALESCE(SUM(cards_correct), 0) as cards_correct,
+      COALESCE(SUM(duration_seconds), 0) as total_time
+    FROM study_sessions
+    WHERE started_at >= datetime('now', '-30 days')
+    GROUP BY date(started_at)
+    ORDER BY study_date ASC`,
+  );
+
+  return rows.map((r) => ({
+    date: r.study_date,
+    cardsStudied: r.cards_studied,
+    cardsCorrect: r.cards_correct,
+    totalTime: r.total_time,
+  }));
+}
+
+export async function getAllTimeStats(): Promise<{
+  totalCards: number;
+  totalCorrect: number;
+  totalTime: number;
+  totalSessions: number;
+  avgAccuracy: number;
+}> {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{
+    total_cards: number;
+    total_correct: number;
+    total_time: number;
+    total_sessions: number;
+  }>(
+    `SELECT
+      COALESCE(SUM(cards_studied), 0) as total_cards,
+      COALESCE(SUM(cards_correct), 0) as total_correct,
+      COALESCE(SUM(duration_seconds), 0) as total_time,
+      COUNT(*) as total_sessions
+    FROM study_sessions
+    WHERE cards_studied > 0`,
+  );
+
+  const totalCards = row?.total_cards ?? 0;
+  const totalCorrect = row?.total_correct ?? 0;
+
+  return {
+    totalCards,
+    totalCorrect,
+    totalTime: row?.total_time ?? 0,
+    totalSessions: row?.total_sessions ?? 0,
+    avgAccuracy: totalCards > 0 ? Math.round((totalCorrect / totalCards) * 100) : 0,
+  };
+}
