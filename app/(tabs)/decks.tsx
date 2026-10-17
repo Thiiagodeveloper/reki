@@ -15,9 +15,11 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { useDecksStore } from '@/src/stores/decks.store';
+import { useThemeColors } from '@/src/hooks/useThemeColors';
 import type { Deck } from '@/src/types';
 
 export default function DecksScreen() {
+  const c = useThemeColors();
   const { decks, loading, loadDecks, addDeck, editDeck, removeDeck } = useDecksStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
@@ -112,7 +114,7 @@ export default function DecksScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       <FlatList
         data={decks}
         keyExtractor={(item) => item.id.toString()}
@@ -137,20 +139,28 @@ export default function DecksScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{editingDeck ? 'Edit Deck' : 'New Deck'}</Text>
+          <View style={[styles.modalContent, { backgroundColor: c.surface }]}>
+            <Text style={[styles.modalTitle, { color: c.text }]}>
+              {editingDeck ? 'Edit Deck' : 'New Deck'}
+            </Text>
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: c.background, color: c.text }]}
               placeholder="Deck name"
+              placeholderTextColor={c.textSecondary}
               value={name}
               onChangeText={setName}
               autoFocus
             />
 
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input,
+                styles.textArea,
+                { backgroundColor: c.background, color: c.text },
+              ]}
               placeholder="Description (optional)"
+              placeholderTextColor={c.textSecondary}
               value={description}
               onChangeText={setDescription}
               multiline
