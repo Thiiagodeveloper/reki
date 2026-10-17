@@ -165,12 +165,12 @@ CREATE INDEX idx_study_sessions_deck_id ON study_sessions(deck_id);
 | ID   | Feature           | Descripcion                                       | Prioridad |
 | ---- | ----------------- | ------------------------------------------------- | --------- |
 | F1.1 | Project Setup     | Expo init, estructura, linting, git, CI           | Hecho     |
-| F1.2 | Database Layer    | Schema SQLite, migrations, DAOs                   | Alta      |
-| F1.3 | CRUD Mazos        | Crear, editar, eliminar mazos                     | Alta      |
-| F1.4 | CRUD Tarjetas     | Crear, editar, eliminar tarjetas (frente/reverso) | Alta      |
-| F1.5 | Motor FSRS        | Integracion ts-fsrs, scheduling de tarjetas       | Alta      |
-| F1.6 | Sesion de Estudio | Flip card, botones (Again/Hard/Good/Easy), cola   | Alta      |
-| F1.7 | Dashboard         | Resumen: pendientes hoy, streak, mazos            | Media     |
+| F1.2 | Database Layer    | Schema SQLite, migrations, DAOs                   | Hecho     |
+| F1.3 | CRUD Mazos        | Crear, editar, eliminar mazos                     | Hecho     |
+| F1.4 | CRUD Tarjetas     | Crear, editar, eliminar tarjetas (frente/reverso) | Hecho     |
+| F1.5 | Motor FSRS        | Integracion ts-fsrs, scheduling de tarjetas       | Hecho     |
+| F1.6 | Sesion de Estudio | Flip card, botones (Again/Hard/Good/Easy), cola   | Hecho     |
+| F1.7 | Dashboard         | Resumen: pendientes hoy, streak, mazos            | Hecho     |
 
 ### Fase 2 - Importacion + UX (Semanas 4-5)
 
@@ -178,10 +178,10 @@ CREATE INDEX idx_study_sessions_deck_id ON study_sessions(deck_id);
 
 | ID   | Feature            | Descripcion                             | Prioridad |
 | ---- | ------------------ | --------------------------------------- | --------- |
-| F2.1 | Importador .apkg   | Parser de archivos Anki con media       | Alta      |
+| F2.1 | Importador .apkg   | Parser de archivos Anki con media       | Hecho     |
 | F2.2 | Busqueda y Filtros | Buscar tarjetas, filtrar por tags/mazo  | Media     |
-| F2.3 | Estadisticas       | Graficas de progreso, accuracy, heatmap | Media     |
-| F2.4 | Dark/Light Mode    | Temas con toggle automatico del sistema | Baja      |
+| F2.3 | Estadisticas       | Graficas de progreso, accuracy, heatmap | Hecho     |
+| F2.4 | Dark/Light Mode    | Temas con toggle automatico del sistema | Hecho     |
 | F2.5 | Notificaciones     | Recordatorios diarios de estudio        | Media     |
 
 ### Fase 3 - Idiomas + AI (Semanas 6-8)
