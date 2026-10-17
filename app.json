@@ -8,7 +8,8 @@
     "scheme": "reki",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.reki"
     },
     "android": {
       "adaptiveIcon": {
