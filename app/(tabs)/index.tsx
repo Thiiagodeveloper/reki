@@ -124,6 +124,20 @@ export default function HomeScreen() {
           </Text>
         </View>
       )}
+      <View style={styles.quickActions}>
+        <Pressable
+          style={[styles.actionBtn, { backgroundColor: c.primary }]}
+          onPress={() => router.push('/generate' as never)}
+        >
+          <Text style={styles.actionBtnText}>AI Generate</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.actionBtn, { backgroundColor: c.surface }]}
+          onPress={() => router.push('/settings' as never)}
+        >
+          <Text style={[styles.actionBtnTextAlt, { color: c.textSecondary }]}>Settings</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -172,4 +186,24 @@ const styles = StyleSheet.create({
   doneEmoji: { fontSize: 40, marginBottom: 12 },
   doneText: { fontSize: 20, fontWeight: '600' },
   doneSubtext: { fontSize: 14, marginTop: 6 },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 24,
+  },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  actionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  actionBtnTextAlt: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

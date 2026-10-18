@@ -56,6 +56,14 @@ function RootLayoutNav() {
         />
         <Stack.Screen name="import/index" options={{ title: 'Import', presentation: 'modal' }} />
         <Stack.Screen name="search/index" options={{ title: 'Search', presentation: 'modal' }} />
+        <Stack.Screen
+          name="generate/index"
+          options={{ title: 'AI Generate', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="settings/index"
+          options={{ title: 'Settings', presentation: 'modal' }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
