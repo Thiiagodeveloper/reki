@@ -6,32 +6,37 @@ import { formatInterval } from '../../lib/fsrs';
 interface AnswerButtonsProps {
   intervalPreview: Record<number, { due: Date; interval: number }> | null;
   onGrade: (grade: Grade) => void;
+  visible: boolean;
 }
 
 const buttons: { grade: Grade; label: string; color: string; bgColor: string }[] = [
-  { grade: Rating.Again, label: 'Again', color: '#FFFFFF', bgColor: '#FF7675' },
-  { grade: Rating.Hard, label: 'Hard', color: '#FFFFFF', bgColor: '#E17055' },
-  { grade: Rating.Good, label: 'Good', color: '#FFFFFF', bgColor: '#00B894' },
-  { grade: Rating.Easy, label: 'Easy', color: '#FFFFFF', bgColor: '#6C5CE7' },
+  { grade: Rating.Again, label: 'Again', color: '#FF7675', bgColor: '#FFF0F0' },
+  { grade: Rating.Hard, label: 'Hard', color: '#E17055', bgColor: '#FFF3ED' },
+  { grade: Rating.Good, label: 'Good', color: '#00B894', bgColor: '#E8FFF7' },
+  { grade: Rating.Easy, label: 'Easy', color: '#6C5CE7', bgColor: '#F0EDFF' },
 ];
 
-export function AnswerButtons({ intervalPreview, onGrade }: AnswerButtonsProps) {
+export function AnswerButtons({ intervalPreview, onGrade, visible }: AnswerButtonsProps) {
   const handlePress = (grade: Grade) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onGrade(grade);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, !visible && styles.hidden]}>
       {buttons.map(({ grade, label, color, bgColor }) => (
         <Pressable
           key={grade}
-          style={[styles.button, { backgroundColor: bgColor }]}
+          style={[
+            styles.button,
+            { backgroundColor: bgColor, borderColor: color, borderWidth: 1.5 },
+          ]}
           onPress={() => handlePress(grade)}
+          disabled={!visible}
         >
           <Text style={[styles.label, { color }]}>{label}</Text>
           <Text style={[styles.interval, { color }]}>
-            {intervalPreview?.[grade] ? formatInterval(intervalPreview[grade].interval) : ''}
+            {intervalPreview?.[grade] ? formatInterval(intervalPreview[grade].interval) : ' '}
           </Text>
         </Pressable>
       ))}
@@ -46,6 +51,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 6,
   },
+  hidden: {
+    opacity: 0,
+  },
   button: {
     flex: 1,
     paddingVertical: 10,
@@ -55,11 +63,11 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   interval: {
     fontSize: 11,
     marginTop: 2,
-    opacity: 0.85,
+    opacity: 0.7,
   },
 });

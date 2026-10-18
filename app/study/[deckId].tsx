@@ -112,12 +112,11 @@ export default function StudyScreen() {
         speaking={speaking}
       />
 
-      {isFlipped && (
-        <AnswerButtons
-          intervalPreview={intervalPreview}
-          onGrade={(grade: Grade) => answerCard(grade)}
-        />
-      )}
+      <AnswerButtons
+        intervalPreview={intervalPreview}
+        onGrade={(grade: Grade) => answerCard(grade)}
+        visible={isFlipped}
+      />
     </View>
   );
 }
