@@ -5,7 +5,7 @@ import { getDatabase } from '../database/connection';
 export interface ImportResult {
   deckName: string;
   cardsImported: number;
-  mediaImported: number;
+  imagesExtracted: number;
   errors: string[];
 }
 
@@ -37,13 +37,16 @@ const SKIP_KEYWORDS = [
   'nombredelarchivo',
   'audio',
   'sound',
-  'imagen',
-  'image',
-  'img',
-  'foto',
-  'photo',
-  'video',
 ];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+export function getMediaDir(): Directory {
+  const dir = new Directory(Paths.document, 'reki_media');
+  if (!Paths.info(dir.uri).exists) {
+    dir.create();
+  }
+  return dir;
+}
 
 export async function importApkg(fileUri: string): Promise<ImportResult> {
   const errors: string[] = [];
@@ -58,18 +61,20 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
   let ankiDb: SQLite.SQLiteDatabase | null = null;
 
   try {
-    const unzipResult = await unzipAnkiDb(tempZip, tempDir);
-    if (!unzipResult) {
-      throw new Error('Invalid .apkg file: no collection database found');
-    }
+    const JSZip = (await import('jszip')).default;
+    const zipBytes = await tempZip.bytes();
+    const zip = await JSZip.loadAsync(zipBytes);
 
-    const sqliteDir = new Directory(Paths.document, 'SQLite');
-    if (!Paths.info(sqliteDir.uri).exists) {
-      sqliteDir.create();
-    }
+    const dbName = zip.file('collection.anki21') ? 'collection.anki21' : 'collection.anki2';
+    const dbEntry = zip.file(dbName);
+    if (!dbEntry) throw new Error('Invalid .apkg file: no collection database found');
 
-    const tempDbDest = new File(Paths.document, 'SQLite', TEMP_DB_NAME);
-    unzipResult.copy(tempDbDest);
+    const dbBytes = await dbEntry.async('uint8array');
+    const tempDbDir = new Directory(Paths.document, 'SQLite');
+    if (!Paths.info(tempDbDir.uri).exists) tempDbDir.create();
+
+    const tempDbFile = new File(Paths.document, 'SQLite', TEMP_DB_NAME);
+    await tempDbFile.write(dbBytes);
 
     ankiDb = await SQLite.openDatabaseAsync(TEMP_DB_NAME);
 
@@ -124,6 +129,23 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
     await ankiDb.closeAsync();
     ankiDb = null;
 
+    // Parse media mapping
+    let mediaMap: Record<string, string> = {};
+    const mediaFile = zip.file('media');
+    if (mediaFile) {
+      try {
+        mediaMap = JSON.parse(await mediaFile.async('string'));
+      } catch {
+        errors.push('Could not parse media mapping');
+      }
+    }
+
+    // Build reverse map: filename -> zip entry number
+    const filenameToNum: Record<string, string> = {};
+    for (const [num, name] of Object.entries(mediaMap)) {
+      filenameToNum[name] = num;
+    }
+
     const db = await getDatabase();
     const deckId = (
       await db.runAsync(
@@ -134,42 +156,62 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
     ).lastInsertRowId;
 
     let cardsImported = 0;
-    const BATCH_SIZE = 200;
+    const imageRefs = new Set<string>();
 
-    for (let i = 0; i < notes.length; i += BATCH_SIZE) {
-      const batch = notes.slice(i, i + BATCH_SIZE);
-      for (const note of batch) {
-        const model = models[String(note.mid)];
-        const { front, back } = extractFrontBack(note.fields, model);
+    for (const note of notes) {
+      const model = models[String(note.mid)];
+      const { front, back, imageName } = extractFrontBack(note.fields, model);
 
-        if (!front.trim()) continue;
+      if (!front.trim()) continue;
 
-        try {
-          const cardResult = await db.runAsync(
-            'INSERT INTO cards (deck_id, front, back, type, tags) VALUES (?, ?, ?, ?, ?)',
-            deckId,
-            front,
-            back,
-            'basic',
-            note.tags,
-          );
+      if (imageName) imageRefs.add(imageName);
 
-          await db.runAsync(
-            "INSERT INTO reviews (card_id, state, due) VALUES (?, 'new', datetime('now'))",
-            cardResult.lastInsertRowId,
-          );
+      try {
+        const cardResult = await db.runAsync(
+          'INSERT INTO cards (deck_id, front, back, type, tags) VALUES (?, ?, ?, ?, ?)',
+          deckId,
+          front,
+          imageName ? `${back}\n[img:${imageName}]` : back,
+          'basic',
+          note.tags,
+        );
 
-          cardsImported++;
-        } catch {
-          errors.push(`Failed to import note ${note.id}`);
-        }
+        await db.runAsync(
+          "INSERT INTO reviews (card_id, state, due) VALUES (?, 'new', datetime('now'))",
+          cardResult.lastInsertRowId,
+        );
+
+        cardsImported++;
+      } catch {
+        errors.push(`Failed to import note ${note.id}`);
+      }
+    }
+
+    // Extract images
+    let imagesExtracted = 0;
+    const mediaDir = getMediaDir();
+
+    for (const imgName of imageRefs) {
+      const num = filenameToNum[imgName];
+      if (!num) continue;
+
+      const entry = zip.file(num);
+      if (!entry) continue;
+
+      try {
+        const imgBytes = await entry.async('uint8array');
+        const outFile = new File(mediaDir, imgName);
+        await outFile.write(imgBytes);
+        imagesExtracted++;
+      } catch {
+        errors.push(`Failed to extract image: ${imgName}`);
       }
     }
 
     return {
       deckName,
       cardsImported,
-      mediaImported: 0,
+      imagesExtracted,
       errors,
     };
   } finally {
@@ -186,36 +228,22 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
       /* cleanup best effort */
     }
     try {
-      const tempDbFile = new File(Paths.document, 'SQLite', TEMP_DB_NAME);
-      tempDbFile.delete();
+      new File(Paths.document, 'SQLite', TEMP_DB_NAME).delete();
     } catch {
       /* cleanup best effort */
     }
   }
 }
 
-async function unzipAnkiDb(zipFile: File, destDir: Directory): Promise<File | null> {
-  const JSZip = (await import('jszip')).default;
-
-  const zipBytes = await zipFile.bytes();
-  const zip = await JSZip.loadAsync(zipBytes);
-
-  const dbName = zip.file('collection.anki21') ? 'collection.anki21' : 'collection.anki2';
-  const dbEntry = zip.file(dbName);
-  if (!dbEntry) return null;
-
-  const dbBytes = await dbEntry.async('uint8array');
-  const outFile = new File(destDir, 'collection.db');
-  await outFile.write(dbBytes);
-
-  return outFile;
-}
-
-function extractFrontBack(fields: string[], model?: AnkiModel): { front: string; back: string } {
+function extractFrontBack(
+  fields: string[],
+  model?: AnkiModel,
+): { front: string; back: string; imageName: string | null } {
   if (!model || !model.flds || model.flds.length === 0) {
     return {
       front: stripHtml(fields[0] || ''),
       back: stripHtml(fields.slice(1).join('\n')),
+      imageName: null,
     };
   }
 
@@ -228,10 +256,36 @@ function extractFrontBack(fields: string[], model?: AnkiModel): { front: string;
 
   let frontIdx = -1;
   const backIndices: number[] = [];
+  let imageName: string | null = null;
+
+  // Find image field
+  for (let i = 0; i < fieldNames.length; i++) {
+    const name = fieldNames[i];
+    if (
+      name.includes('imagen') ||
+      name.includes('image') ||
+      name.includes('img') ||
+      name.includes('foto') ||
+      name.includes('photo')
+    ) {
+      const imgMatch = fields[i]?.match(/<img[^>]*src=["']([^"'>]+)/);
+      if (imgMatch) {
+        imageName = imgMatch[1];
+      }
+    }
+  }
 
   for (let i = 0; i < fieldNames.length; i++) {
     const name = fieldNames[i];
     if (SKIP_KEYWORDS.some((kw) => name.includes(kw))) continue;
+    if (
+      name.includes('imagen') ||
+      name.includes('image') ||
+      name.includes('img') ||
+      name.includes('foto') ||
+      name.includes('photo')
+    )
+      continue;
 
     if (frontIdx === -1 && FRONT_KEYWORDS.some((kw) => name.includes(kw))) {
       frontIdx = i;
@@ -252,6 +306,13 @@ function extractFrontBack(fields: string[], model?: AnkiModel): { front: string;
   if (backIndices.length === 0) {
     for (let i = 0; i < fieldNames.length; i++) {
       if (i !== frontIdx && !SKIP_KEYWORDS.some((kw) => fieldNames[i].includes(kw))) {
+        const normalized = fieldNames[i];
+        if (
+          normalized.includes('imagen') ||
+          normalized.includes('image') ||
+          normalized.includes('img')
+        )
+          continue;
         const val = stripHtml(fields[i] || '');
         if (val && !val.match(/^\[sound:|<img/)) {
           backIndices.push(i);
@@ -264,7 +325,7 @@ function extractFrontBack(fields: string[], model?: AnkiModel): { front: string;
   const backParts = backIndices.map((i) => stripHtml(fields[i] || '')).filter((v) => v.length > 0);
   const back = backParts.length > 0 ? backParts.join('\n') : stripHtml(fields[1] || '');
 
-  return { front, back };
+  return { front, back, imageName };
 }
 
 function stripHtml(html: string): string {

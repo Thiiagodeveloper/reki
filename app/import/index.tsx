@@ -76,8 +76,8 @@ export default function ImportScreen() {
             <Text style={styles.resultTitle}>Import Complete!</Text>
             <Text style={styles.resultLine}>Deck: {result.deckName}</Text>
             <Text style={styles.resultLine}>Cards imported: {result.cardsImported}</Text>
-            {result.mediaImported > 0 && (
-              <Text style={styles.resultLine}>Media files: {result.mediaImported}</Text>
+            {result.imagesExtracted > 0 && (
+              <Text style={styles.resultLine}>Images: {result.imagesExtracted}</Text>
             )}
             {result.errors.length > 0 && (
               <Text style={styles.resultWarning}>
