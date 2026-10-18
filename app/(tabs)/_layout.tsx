@@ -1,6 +1,6 @@
 import { Tabs, router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -40,9 +40,14 @@ export default function TabLayout() {
             />
           ),
           headerRight: () => (
-            <Pressable style={styles.importBtn} onPress={() => router.push('/import' as never)}>
-              <Text style={styles.importBtnText}>Import</Text>
-            </Pressable>
+            <View style={styles.headerButtons}>
+              <Pressable style={styles.headerBtn} onPress={() => router.push('/search' as never)}>
+                <Text style={styles.headerBtnText}>Search</Text>
+              </Pressable>
+              <Pressable style={styles.headerBtn} onPress={() => router.push('/import' as never)}>
+                <Text style={styles.headerBtnText}>Import</Text>
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -64,10 +69,13 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  importBtn: {
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 16,
     marginRight: 16,
   },
-  importBtnText: {
+  headerBtn: {},
+  headerBtnText: {
     color: '#6C5CE7',
     fontSize: 15,
     fontWeight: '600',

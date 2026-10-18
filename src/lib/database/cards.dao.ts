@@ -96,3 +96,32 @@ export async function getCardCount(deckId: number): Promise<number> {
   );
   return row?.count ?? 0;
 }
+
+export async function searchCards(
+  query: string,
+  deckId?: number,
+): Promise<(Card & { deckName: string })[]> {
+  const db = await getDatabase();
+  const searchTerm = `%${query}%`;
+
+  let sql = `
+    SELECT c.*, d.name as deck_name
+    FROM cards c
+    JOIN decks d ON d.id = c.deck_id
+    WHERE (c.front LIKE ? OR c.back LIKE ? OR c.tags LIKE ?)
+  `;
+  const params: (string | number)[] = [searchTerm, searchTerm, searchTerm];
+
+  if (deckId) {
+    sql += ' AND c.deck_id = ?';
+    params.push(deckId);
+  }
+
+  sql += ' ORDER BY c.updated_at DESC LIMIT 100';
+
+  const rows = await db.getAllAsync<CardRow & { deck_name: string }>(sql, ...params);
+  return rows.map((row) => ({
+    ...rowToCard(row),
+    deckName: row.deck_name,
+  }));
+}
