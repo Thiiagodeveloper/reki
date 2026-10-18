@@ -45,27 +45,11 @@ export function FlipCard({
   return (
     <View style={styles.container}>
       <View style={styles.cardWrapper}>
-        <Animated.View style={[styles.card, styles.frontCard, frontStyle]}>
-          <Pressable style={styles.cardPressable} onPress={!isFlipped ? onFlip : undefined}>
-            <ScrollView
-              contentContainerStyle={styles.cardContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={styles.cardText}>{front}</Text>
-              {!isFlipped && <Text style={styles.tapHint}>Tap to reveal</Text>}
-            </ScrollView>
-          </Pressable>
-          {onSpeakFront && (
-            <Pressable
-              style={[styles.speakBtn, speaking && styles.speakBtnActive]}
-              onPress={onSpeakFront}
-            >
-              <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
-            </Pressable>
-          )}
-        </Animated.View>
-
-        <Animated.View style={[styles.card, styles.backCard, backStyle]}>
+        {/* Back card - rendered first so front is on top */}
+        <Animated.View
+          style={[styles.card, styles.backCard, backStyle]}
+          pointerEvents={isFlipped ? 'auto' : 'none'}
+        >
           <ScrollView
             contentContainerStyle={styles.cardContent}
             showsVerticalScrollIndicator={false}
@@ -80,6 +64,34 @@ export function FlipCard({
             </View>
             <Text style={styles.cardText}>{back}</Text>
           </ScrollView>
+        </Animated.View>
+
+        {/* Front card - on top */}
+        <Animated.View
+          style={[styles.card, styles.frontCard, frontStyle]}
+          pointerEvents={isFlipped ? 'none' : 'auto'}
+        >
+          <Pressable style={styles.cardPressable} onPress={onFlip}>
+            <ScrollView
+              contentContainerStyle={styles.cardContent}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            >
+              <Text style={styles.cardText}>{front}</Text>
+              <Text style={styles.tapHint}>Tap to reveal</Text>
+            </ScrollView>
+          </Pressable>
+          {onSpeakFront && (
+            <Pressable
+              style={[styles.speakBtn, speaking && styles.speakBtnActive]}
+              onPress={(e) => {
+                e.stopPropagation();
+                onSpeakFront();
+              }}
+            >
+              <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
+            </Pressable>
+          )}
         </Animated.View>
       </View>
     </View>
@@ -108,6 +120,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 5,
+    overflow: 'hidden',
   },
   cardPressable: {
     flex: 1,
@@ -123,6 +136,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    paddingBottom: 70,
   },
   backHeader: {
     flexDirection: 'row',
@@ -150,14 +164,17 @@ const styles = StyleSheet.create({
   },
   speakBtn: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 16,
     alignSelf: 'center',
+    left: '50%',
+    marginLeft: -24,
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#F0EDFF',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
   },
   speakBtnActive: {
     backgroundColor: '#6C5CE7',
