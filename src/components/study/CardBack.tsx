@@ -4,7 +4,6 @@ import { Paths } from 'expo-file-system';
 interface CardBackProps {
   content: string;
   onSpeak?: () => void;
-  speaking?: boolean;
 }
 
 interface ParsedBack {
@@ -65,7 +64,7 @@ function parseBackContent(content: string): ParsedBack {
   return result;
 }
 
-export function CardBack({ content, onSpeak, speaking }: CardBackProps) {
+export function CardBack({ content, onSpeak }: CardBackProps) {
   const parsed = parseBackContent(content);
   const hasStructure = parsed.definitions.length > 0 || parsed.exampleSentence;
 
@@ -76,7 +75,7 @@ export function CardBack({ content, onSpeak, speaking }: CardBackProps) {
           <Text style={styles.label}>Answer</Text>
           {onSpeak && (
             <Pressable style={styles.speakBtn} onPress={onSpeak}>
-              <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
+              <Text style={styles.speakIcon}>🔈</Text>
             </Pressable>
           )}
         </View>
@@ -91,7 +90,7 @@ export function CardBack({ content, onSpeak, speaking }: CardBackProps) {
         <Text style={styles.label}>Answer</Text>
         {onSpeak && (
           <Pressable style={styles.speakBtn} onPress={onSpeak}>
-            <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
+            <Text style={styles.speakIcon}>🔈</Text>
           </Pressable>
         )}
       </View>

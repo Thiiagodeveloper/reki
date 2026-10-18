@@ -15,7 +15,6 @@ interface FlipCardProps {
   onFlip: () => void;
   onSpeakFront?: () => void;
   onSpeakBack?: () => void;
-  speaking?: boolean;
 }
 
 export function FlipCard({
@@ -25,7 +24,6 @@ export function FlipCard({
   onFlip,
   onSpeakFront,
   onSpeakBack,
-  speaking,
 }: FlipCardProps) {
   const rotation = useSharedValue(0);
 
@@ -55,7 +53,7 @@ export function FlipCard({
             contentContainerStyle={styles.cardContent}
             showsVerticalScrollIndicator={false}
           >
-            <CardBack content={back} onSpeak={onSpeakBack} speaking={speaking} />
+            <CardBack content={back} onSpeak={onSpeakBack} />
           </ScrollView>
         </Animated.View>
 
@@ -72,13 +70,13 @@ export function FlipCard({
           </Pressable>
           {onSpeakFront && (
             <Pressable
-              style={[styles.speakBtn, speaking && styles.speakBtnActive]}
+              style={styles.speakBtn}
               onPress={(e) => {
                 e.stopPropagation();
                 onSpeakFront();
               }}
             >
-              <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
+              <Text style={styles.speakIcon}>🔈</Text>
             </Pressable>
           )}
         </Animated.View>

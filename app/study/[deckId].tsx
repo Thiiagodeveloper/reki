@@ -11,7 +11,7 @@ import { AnswerButtons } from '@/src/components/study/AnswerButtons';
 export default function StudyScreen() {
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const id = Number(deckId);
-  const { speak, speaking } = useSpeech();
+  const { speak } = useSpeech();
 
   const {
     queue,
@@ -109,7 +109,6 @@ export default function StudyScreen() {
           );
           speak(englishSentence || card.card.front);
         }}
-        speaking={speaking}
       />
 
       <AnswerButtons
