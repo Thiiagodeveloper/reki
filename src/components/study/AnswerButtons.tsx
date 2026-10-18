@@ -10,42 +10,34 @@ interface AnswerButtonsProps {
   visible: boolean;
 }
 
-const buttons: { grade: Grade; label: string; activeColor: string; activeBg: string }[] = [
-  { grade: Rating.Again, label: 'Again', activeColor: '#D63031', activeBg: '#FFCCCC' },
-  { grade: Rating.Hard, label: 'Hard', activeColor: '#E17055', activeBg: '#FFD8CC' },
-  { grade: Rating.Good, label: 'Good', activeColor: '#00856A', activeBg: '#B8F0DD' },
-  { grade: Rating.Easy, label: 'Easy', activeColor: '#5A4BD1', activeBg: '#D5CFFF' },
+const buttons: { grade: Grade; label: string; color: string; bgColor: string }[] = [
+  { grade: Rating.Again, label: 'Again', color: '#D63031', bgColor: '#FFCCCC' },
+  { grade: Rating.Hard, label: 'Hard', color: '#E17055', bgColor: '#FFD8CC' },
+  { grade: Rating.Good, label: 'Good', color: '#00856A', bgColor: '#B8F0DD' },
+  { grade: Rating.Easy, label: 'Easy', color: '#5A4BD1', bgColor: '#D5CFFF' },
 ];
 
 function AnswerButtonsInner({ intervalPreview, onGrade, visible }: AnswerButtonsProps) {
-  const handlePress = (grade: Grade) => {
-    if (!visible) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onGrade(grade);
-  };
-
   return (
-    <View style={styles.container}>
-      {buttons.map(({ grade, label, activeColor, activeBg }) => {
-        const color = visible ? activeColor : '#B2BEC3';
-        const bg = visible ? activeBg : '#F1F2F6';
-        const borderColor = visible ? activeColor : '#DFE6E9';
-
-        return (
-          <Pressable
-            key={grade}
-            style={[styles.button, { backgroundColor: bg, borderColor, borderWidth: 1.5 }]}
-            onPress={() => handlePress(grade)}
-          >
-            <Text style={[styles.label, { color }]}>{label}</Text>
-            <Text style={[styles.interval, { color }]}>
-              {visible && intervalPreview?.[grade]
-                ? formatInterval(intervalPreview[grade].interval)
-                : ' '}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View
+      style={[styles.container, { opacity: visible ? 1 : 0 }]}
+      pointerEvents={visible ? 'auto' : 'none'}
+    >
+      {buttons.map(({ grade, label, color, bgColor }) => (
+        <Pressable
+          key={grade}
+          style={[styles.button, { backgroundColor: bgColor }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onGrade(grade);
+          }}
+        >
+          <Text style={[styles.label, { color }]}>{label}</Text>
+          <Text style={[styles.interval, { color }]}>
+            {intervalPreview?.[grade] ? formatInterval(intervalPreview[grade].interval) : ' '}
+          </Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -58,13 +50,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 16,
     gap: 6,
+    height: 56,
   },
   button: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
     alignItems: 'center',
-    minWidth: 70,
   },
   label: {
     fontSize: 13,
@@ -73,6 +65,6 @@ const styles = StyleSheet.create({
   interval: {
     fontSize: 11,
     marginTop: 2,
-    opacity: 0.85,
+    opacity: 0.7,
   },
 });
