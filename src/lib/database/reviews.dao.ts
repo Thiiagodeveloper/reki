@@ -47,41 +47,47 @@ export interface DueCard {
   review: ReviewState;
 }
 
-export async function getDueCards(deckId: number, limit: number = 50): Promise<DueCard[]> {
+export async function getDueCards(
+  deckId: number,
+  newLimit: number = 20,
+  reviewLimit: number = 100,
+): Promise<DueCard[]> {
   const db = await getDatabase();
-  const rows = await db.getAllAsync<
-    ReviewRow & {
-      front: string;
-      back: string;
-      type: string;
-      tags: string;
-      deck_id: number;
-      card_created_at: string;
-      card_updated_at: string;
-    }
-  >(
-    `
-    SELECT
-      r.*,
-      c.front, c.back, c.type, c.tags, c.deck_id,
+
+  type JoinedRow = ReviewRow & {
+    front: string;
+    back: string;
+    type: string;
+    tags: string;
+    deck_id: number;
+    card_created_at: string;
+    card_updated_at: string;
+  };
+
+  const newCards = await db.getAllAsync<JoinedRow>(
+    `SELECT r.*, c.front, c.back, c.type, c.tags, c.deck_id,
       c.created_at as card_created_at, c.updated_at as card_updated_at
-    FROM reviews r
-    JOIN cards c ON c.id = r.card_id
-    WHERE c.deck_id = ?
-      AND (r.state = 'new' OR r.due <= datetime('now'))
-    ORDER BY
-      CASE r.state
-        WHEN 'relearning' THEN 0
-        WHEN 'learning' THEN 1
-        WHEN 'new' THEN 2
-        WHEN 'review' THEN 3
-      END,
-      r.due ASC
-    LIMIT ?
-  `,
+    FROM reviews r JOIN cards c ON c.id = r.card_id
+    WHERE c.deck_id = ? AND r.state = 'new'
+    ORDER BY r.id ASC LIMIT ?`,
     deckId,
-    limit,
+    newLimit,
   );
+
+  const dueCards = await db.getAllAsync<JoinedRow>(
+    `SELECT r.*, c.front, c.back, c.type, c.tags, c.deck_id,
+      c.created_at as card_created_at, c.updated_at as card_updated_at
+    FROM reviews r JOIN cards c ON c.id = r.card_id
+    WHERE c.deck_id = ? AND r.state != 'new' AND r.due <= datetime('now')
+    ORDER BY
+      CASE r.state WHEN 'relearning' THEN 0 WHEN 'learning' THEN 1 ELSE 2 END,
+      r.due ASC
+    LIMIT ?`,
+    deckId,
+    reviewLimit,
+  );
+
+  const rows = [...dueCards, ...newCards];
 
   return rows.map((row) => ({
     card: {

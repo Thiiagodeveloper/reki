@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { reviewsDao, studySessionsDao } from '../lib/database';
 import { gradeCard, previewGrades } from '../lib/fsrs';
+import { getSettings } from '../lib/settings';
 import type { Grade } from 'ts-fsrs';
 import type { DueCard } from '../lib/database/reviews.dao';
 
@@ -40,7 +41,12 @@ export const useStudyStore = create<StudyState>((set, get) => ({
 
   startSession: async (deckId) => {
     set({ loading: true });
-    const dueCards = await reviewsDao.getDueCards(deckId);
+    const settings = await getSettings();
+    const dueCards = await reviewsDao.getDueCards(
+      deckId,
+      settings.dailyNewCardLimit,
+      settings.dailyReviewLimit,
+    );
     const sessionId = await studySessionsDao.createSession(deckId);
 
     set({

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { configureNotifications } from '@/src/lib/notifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -18,6 +19,7 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+configureNotifications();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
