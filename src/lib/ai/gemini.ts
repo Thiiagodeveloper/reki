@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
 const STORAGE_KEY = 'reki_gemini_api_key';
 
 export async function getApiKey(): Promise<string | null> {
