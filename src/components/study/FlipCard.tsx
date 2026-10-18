@@ -43,25 +43,26 @@ export function FlipCard({
   }, [isFlipped, rotation]);
 
   return (
-    <Pressable style={styles.container} onPress={!isFlipped ? onFlip : undefined}>
+    <View style={styles.container}>
       <View style={styles.cardWrapper}>
         <Animated.View style={[styles.card, styles.frontCard, frontStyle]}>
-          <ScrollView
-            contentContainerStyle={styles.cardContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={styles.cardText}>{front}</Text>
-            {onSpeakFront && (
-              <Pressable
-                style={[styles.speakBtn, speaking && styles.speakBtnActive]}
-                onPress={onSpeakFront}
-                hitSlop={10}
-              >
-                <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
-              </Pressable>
-            )}
-            {!isFlipped && <Text style={styles.tapHint}>Tap to reveal</Text>}
-          </ScrollView>
+          <Pressable style={styles.cardPressable} onPress={!isFlipped ? onFlip : undefined}>
+            <ScrollView
+              contentContainerStyle={styles.cardContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.cardText}>{front}</Text>
+              {!isFlipped && <Text style={styles.tapHint}>Tap to reveal</Text>}
+            </ScrollView>
+          </Pressable>
+          {onSpeakFront && (
+            <Pressable
+              style={[styles.speakBtn, speaking && styles.speakBtnActive]}
+              onPress={onSpeakFront}
+            >
+              <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
+            </Pressable>
+          )}
         </Animated.View>
 
         <Animated.View style={[styles.card, styles.backCard, backStyle]}>
@@ -72,7 +73,7 @@ export function FlipCard({
             <View style={styles.backHeader}>
               <Text style={styles.label}>Answer</Text>
               {onSpeakBack && (
-                <Pressable style={styles.speakBtnSmall} onPress={onSpeakBack} hitSlop={10}>
+                <Pressable style={styles.speakBtnSmall} onPress={onSpeakBack}>
                   <Text style={styles.speakIconSmall}>{speaking ? '🔊' : '🔈'}</Text>
                 </Pressable>
               )}
@@ -81,7 +82,7 @@ export function FlipCard({
           </ScrollView>
         </Animated.View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -107,6 +108,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 5,
+  },
+  cardPressable: {
+    flex: 1,
   },
   frontCard: {
     backgroundColor: '#FFFFFF',
@@ -145,7 +149,9 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   speakBtn: {
-    marginTop: 16,
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
     width: 48,
     height: 48,
     borderRadius: 24,
