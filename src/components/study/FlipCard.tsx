@@ -53,7 +53,7 @@ export function FlipCard({
             contentContainerStyle={styles.cardContent}
             showsVerticalScrollIndicator={false}
           >
-            <CardBack content={back} onSpeak={onSpeakBack} />
+            <CardBack content={back} front={front} onSpeak={onSpeakBack} />
           </ScrollView>
         </Animated.View>
 

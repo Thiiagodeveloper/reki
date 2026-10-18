@@ -1,8 +1,10 @@
 import { StyleSheet, Text, View, Pressable, Image } from 'react-native';
 import { Paths } from 'expo-file-system';
+import { AiExplain } from './AiExplain';
 
 interface CardBackProps {
   content: string;
+  front?: string;
   onSpeak?: () => void;
 }
 
@@ -64,7 +66,7 @@ function parseBackContent(content: string): ParsedBack {
   return result;
 }
 
-export function CardBack({ content, onSpeak }: CardBackProps) {
+export function CardBack({ content, front, onSpeak }: CardBackProps) {
   const parsed = parseBackContent(content);
   const hasStructure = parsed.definitions.length > 0 || parsed.exampleSentence;
 
@@ -140,6 +142,8 @@ export function CardBack({ content, onSpeak }: CardBackProps) {
           ))}
         </View>
       )}
+
+      {front && <AiExplain front={front} back={content} />}
     </View>
   );
 }
