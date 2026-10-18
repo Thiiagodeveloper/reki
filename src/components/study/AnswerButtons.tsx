@@ -10,10 +10,10 @@ interface AnswerButtonsProps {
 }
 
 const buttons: { grade: Grade; label: string; color: string; bgColor: string }[] = [
-  { grade: Rating.Again, label: 'Again', color: '#FF7675', bgColor: '#FFF0F0' },
-  { grade: Rating.Hard, label: 'Hard', color: '#E17055', bgColor: '#FFF3ED' },
-  { grade: Rating.Good, label: 'Good', color: '#00B894', bgColor: '#E8FFF7' },
-  { grade: Rating.Easy, label: 'Easy', color: '#6C5CE7', bgColor: '#F0EDFF' },
+  { grade: Rating.Again, label: 'Again', color: '#D63031', bgColor: '#FFCCCC' },
+  { grade: Rating.Hard, label: 'Hard', color: '#E17055', bgColor: '#FFD8CC' },
+  { grade: Rating.Good, label: 'Good', color: '#00856A', bgColor: '#B8F0DD' },
+  { grade: Rating.Easy, label: 'Easy', color: '#5A4BD1', bgColor: '#D5CFFF' },
 ];
 
 export function AnswerButtons({ intervalPreview, onGrade, visible }: AnswerButtonsProps) {
