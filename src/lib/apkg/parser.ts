@@ -10,7 +10,41 @@ export interface ImportResult {
   errors: string[];
 }
 
+interface AnkiModel {
+  name: string;
+  flds: { name: string; ord: number }[];
+}
+
 const TEMP_DB_NAME = '_apkg_import_temp.db';
+
+const FRONT_KEYWORDS = ['palabra', 'word', 'front', 'anverso', 'question', 'term', 'verbo'];
+const BACK_KEYWORDS = [
+  'definic',
+  'definition',
+  'back',
+  'answer',
+  'meaning',
+  'traduccion',
+  'translation',
+  'ejemplo',
+  'example',
+  'frase',
+];
+const SKIP_KEYWORDS = [
+  'indice',
+  'index',
+  'ordenacion',
+  'sort',
+  'nombredelarchivo',
+  'audio',
+  'sound',
+  'imagen',
+  'image',
+  'img',
+  'foto',
+  'photo',
+  'video',
+];
 
 export async function importApkg(fileUri: string): Promise<ImportResult> {
   const errors: string[] = [];
@@ -30,7 +64,8 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
   const sqliteDir = new File(Paths.document, 'SQLite');
   const dirInfo = Paths.info(sqliteDir.uri);
   if (!dirInfo.exists) {
-    const dir = new (await import('expo-file-system')).Directory(Paths.document, 'SQLite');
+    const { Directory } = await import('expo-file-system');
+    const dir = new Directory(Paths.document, 'SQLite');
     dir.create();
   }
 
@@ -40,6 +75,7 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
   const ankiDb = await SQLite.openDatabaseAsync(TEMP_DB_NAME);
 
   let deckName = 'Imported Deck';
+  const models: Record<string, AnkiModel> = {};
 
   try {
     const colRow = await ankiDb.getFirstAsync<{ models: string; decks: string }>(
@@ -53,6 +89,12 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
       } else if (decksJson['1']) {
         deckName = decksJson['1'].name;
       }
+
+      const modelsJson = JSON.parse(colRow.models);
+      for (const [id, model] of Object.entries(modelsJson)) {
+        const m = model as AnkiModel;
+        models[id] = { name: m.name, flds: m.flds };
+      }
     }
   } catch {
     errors.push('Could not parse collection metadata, using defaults');
@@ -65,12 +107,13 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
     tags: string;
   }
 
-  const notes: { id: number; fields: string[]; tags: string }[] = [];
+  const notes: { id: number; mid: number; fields: string[]; tags: string }[] = [];
   try {
     const noteRows = await ankiDb.getAllAsync<NoteRow>('SELECT id, mid, flds, tags FROM notes');
     for (const row of noteRows) {
       notes.push({
         id: row.id,
+        mid: row.mid,
         fields: row.flds.split('\x1f'),
         tags: row.tags.trim(),
       });
@@ -86,40 +129,38 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
     await db.runAsync(
       'INSERT INTO decks (name, description) VALUES (?, ?)',
       deckName,
-      'Imported from .apkg',
+      `Imported from .apkg (${notes.length} notes)`,
     )
   ).lastInsertRowId;
 
   let cardsImported = 0;
 
-  await db.withTransactionAsync(async () => {
-    for (const note of notes) {
-      const front = note.fields[0] || '';
-      const back = note.fields.slice(1).join('\n') || '';
+  for (const note of notes) {
+    const model = models[String(note.mid)];
+    const { front, back } = extractFrontBack(note.fields, model);
 
-      if (!front.trim()) continue;
+    if (!front.trim()) continue;
 
-      try {
-        const cardResult = await db.runAsync(
-          'INSERT INTO cards (deck_id, front, back, type, tags) VALUES (?, ?, ?, ?, ?)',
-          deckId,
-          stripHtml(front),
-          stripHtml(back),
-          'basic',
-          note.tags,
-        );
+    try {
+      const cardResult = await db.runAsync(
+        'INSERT INTO cards (deck_id, front, back, type, tags) VALUES (?, ?, ?, ?, ?)',
+        deckId,
+        front,
+        back,
+        'basic',
+        note.tags,
+      );
 
-        await db.runAsync(
-          "INSERT INTO reviews (card_id, state, due) VALUES (?, 'new', datetime('now'))",
-          cardResult.lastInsertRowId,
-        );
+      await db.runAsync(
+        "INSERT INTO reviews (card_id, state, due) VALUES (?, 'new', datetime('now'))",
+        cardResult.lastInsertRowId,
+      );
 
-        cardsImported++;
-      } catch {
-        errors.push(`Failed to import note ${note.id}`);
-      }
+      cardsImported++;
+    } catch {
+      errors.push(`Failed to import note ${note.id}`);
     }
-  });
+  }
 
   let mediaImported = 0;
   const mediaFile = zip.file('media');
@@ -146,11 +187,69 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
   };
 }
 
+function extractFrontBack(fields: string[], model?: AnkiModel): { front: string; back: string } {
+  if (!model || !model.flds || model.flds.length === 0) {
+    return {
+      front: stripHtml(fields[0] || ''),
+      back: stripHtml(fields.slice(1).join('\n')),
+    };
+  }
+
+  const fieldNames = model.flds.map((f) =>
+    f.name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''),
+  );
+
+  let frontIdx = -1;
+  let backIndices: number[] = [];
+
+  for (let i = 0; i < fieldNames.length; i++) {
+    const name = fieldNames[i];
+    if (SKIP_KEYWORDS.some((kw) => name.includes(kw))) continue;
+
+    if (frontIdx === -1 && FRONT_KEYWORDS.some((kw) => name.includes(kw))) {
+      frontIdx = i;
+    } else if (BACK_KEYWORDS.some((kw) => name.includes(kw))) {
+      backIndices.push(i);
+    }
+  }
+
+  if (frontIdx === -1) {
+    for (let i = 0; i < fieldNames.length; i++) {
+      if (!SKIP_KEYWORDS.some((kw) => fieldNames[i].includes(kw))) {
+        frontIdx = i;
+        break;
+      }
+    }
+  }
+
+  if (backIndices.length === 0) {
+    for (let i = 0; i < fieldNames.length; i++) {
+      if (i !== frontIdx && !SKIP_KEYWORDS.some((kw) => fieldNames[i].includes(kw))) {
+        const val = stripHtml(fields[i] || '');
+        if (val && !val.match(/^\[sound:|<img/)) {
+          backIndices.push(i);
+        }
+      }
+    }
+  }
+
+  const front = stripHtml(fields[frontIdx] || fields[0] || '');
+  const backParts = backIndices.map((i) => stripHtml(fields[i] || '')).filter((v) => v.length > 0);
+  const back = backParts.length > 0 ? backParts.join('\n') : stripHtml(fields[1] || '');
+
+  return { front, back };
+}
+
 function stripHtml(html: string): string {
   return html
+    .replace(/\[sound:[^\]]*\]/g, '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<div>/gi, '\n')
     .replace(/<\/div>/gi, '')
+    .replace(/<img[^>]*>/gi, '')
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
