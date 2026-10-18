@@ -4,12 +4,14 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import type { Grade } from 'ts-fsrs';
 
 import { useStudyStore } from '@/src/stores/study.store';
+import { useSpeech } from '@/src/hooks/useSpeech';
 import { FlipCard } from '@/src/components/study/FlipCard';
 import { AnswerButtons } from '@/src/components/study/AnswerButtons';
 
 export default function StudyScreen() {
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const id = Number(deckId);
+  const { speak, speaking } = useSpeech();
 
   const {
     queue,
@@ -99,6 +101,9 @@ export default function StudyScreen() {
         back={card.card.back}
         isFlipped={isFlipped}
         onFlip={flipCard}
+        onSpeakFront={() => speak(card.card.front)}
+        onSpeakBack={() => speak(card.card.back)}
+        speaking={speaking}
       />
 
       {isFlipped && (
