@@ -11,9 +11,20 @@ interface FlipCardProps {
   back: string;
   isFlipped: boolean;
   onFlip: () => void;
+  onSpeakFront?: () => void;
+  onSpeakBack?: () => void;
+  speaking?: boolean;
 }
 
-export function FlipCard({ front, back, isFlipped, onFlip }: FlipCardProps) {
+export function FlipCard({
+  front,
+  back,
+  isFlipped,
+  onFlip,
+  onSpeakFront,
+  onSpeakBack,
+  speaking,
+}: FlipCardProps) {
   const rotation = useSharedValue(0);
 
   const frontStyle = useAnimatedStyle(() => ({
@@ -41,6 +52,15 @@ export function FlipCard({ front, back, isFlipped, onFlip }: FlipCardProps) {
             showsVerticalScrollIndicator={false}
           >
             <Text style={styles.cardText}>{front}</Text>
+            {onSpeakFront && (
+              <Pressable
+                style={[styles.speakBtn, speaking && styles.speakBtnActive]}
+                onPress={onSpeakFront}
+                hitSlop={10}
+              >
+                <Text style={styles.speakIcon}>{speaking ? '🔊' : '🔈'}</Text>
+              </Pressable>
+            )}
             {!isFlipped && <Text style={styles.tapHint}>Tap to reveal</Text>}
           </ScrollView>
         </Animated.View>
@@ -50,7 +70,14 @@ export function FlipCard({ front, back, isFlipped, onFlip }: FlipCardProps) {
             contentContainerStyle={styles.cardContent}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.label}>Answer</Text>
+            <View style={styles.backHeader}>
+              <Text style={styles.label}>Answer</Text>
+              {onSpeakBack && (
+                <Pressable style={styles.speakBtnSmall} onPress={onSpeakBack} hitSlop={10}>
+                  <Text style={styles.speakIconSmall}>{speaking ? '🔊' : '🔈'}</Text>
+                </Pressable>
+              )}
+            </View>
             <Text style={styles.cardText}>{back}</Text>
           </ScrollView>
         </Animated.View>
@@ -94,13 +121,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
+  backHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',
     color: '#6C5CE7',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 12,
   },
   cardText: {
     fontSize: 22,
@@ -112,5 +144,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#B2BEC3',
     marginTop: 24,
+  },
+  speakBtn: {
+    marginTop: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F0EDFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speakBtnActive: {
+    backgroundColor: '#6C5CE7',
+  },
+  speakIcon: {
+    fontSize: 22,
+  },
+  speakBtnSmall: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E8E4FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speakIconSmall: {
+    fontSize: 14,
   },
 });

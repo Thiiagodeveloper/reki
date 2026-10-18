@@ -92,22 +92,27 @@ export function previewGrades(review: ReviewState) {
   const now = new Date();
   const preview = scheduler.repeat(fsrsCard, now);
 
+  const calcInterval = (due: Date): number => {
+    const diffMs = due.getTime() - now.getTime();
+    return Math.max(diffMs / (1000 * 60 * 60 * 24), 0);
+  };
+
   return {
     [Rating.Again]: {
       due: preview[Rating.Again].card.due,
-      interval: preview[Rating.Again].card.scheduled_days,
+      interval: calcInterval(preview[Rating.Again].card.due),
     },
     [Rating.Hard]: {
       due: preview[Rating.Hard].card.due,
-      interval: preview[Rating.Hard].card.scheduled_days,
+      interval: calcInterval(preview[Rating.Hard].card.due),
     },
     [Rating.Good]: {
       due: preview[Rating.Good].card.due,
-      interval: preview[Rating.Good].card.scheduled_days,
+      interval: calcInterval(preview[Rating.Good].card.due),
     },
     [Rating.Easy]: {
       due: preview[Rating.Easy].card.due,
-      interval: preview[Rating.Easy].card.scheduled_days,
+      interval: calcInterval(preview[Rating.Easy].card.due),
     },
   };
 }
@@ -115,6 +120,7 @@ export function previewGrades(review: ReviewState) {
 export function formatInterval(days: number): string {
   if (days < 1) {
     const minutes = Math.round(days * 24 * 60);
+    if (minutes <= 0) return '<1m';
     if (minutes < 60) return `${minutes}m`;
     return `${Math.round(minutes / 60)}h`;
   }
