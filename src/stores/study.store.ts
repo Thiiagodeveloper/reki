@@ -43,11 +43,6 @@ export const useStudyStore = create<StudyState>((set, get) => ({
     const dueCards = await reviewsDao.getDueCards(deckId);
     const sessionId = await studySessionsDao.createSession(deckId);
 
-    let preview = null;
-    if (dueCards.length > 0) {
-      preview = previewGrades(dueCards[0].review);
-    }
-
     set({
       deckId,
       queue: dueCards,
@@ -58,12 +53,18 @@ export const useStudyStore = create<StudyState>((set, get) => ({
       startTime: Date.now(),
       isFlipped: false,
       loading: false,
-      intervalPreview: preview,
+      intervalPreview: null,
     });
   },
 
   flipCard: () => {
-    set({ isFlipped: true });
+    const { queue, currentIndex } = get();
+    const current = queue[currentIndex];
+    let preview = null;
+    if (current) {
+      preview = previewGrades(current.review);
+    }
+    set({ isFlipped: true, intervalPreview: preview });
   },
 
   answerCard: async (grade) => {
@@ -77,17 +78,12 @@ export const useStudyStore = create<StudyState>((set, get) => ({
     const newCorrect = grade >= 3 ? cardsCorrect + 1 : cardsCorrect;
     const nextIndex = currentIndex + 1;
 
-    let preview = null;
-    if (nextIndex < queue.length) {
-      preview = previewGrades(queue[nextIndex].review);
-    }
-
     set({
       currentIndex: nextIndex,
       cardsStudied: newStudied,
       cardsCorrect: newCorrect,
       isFlipped: false,
-      intervalPreview: preview,
+      intervalPreview: null,
     });
 
     if (nextIndex >= queue.length) {
