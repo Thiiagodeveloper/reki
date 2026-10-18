@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Image } from 'react-native';
+import { Paths } from 'expo-file-system';
 
 interface CardBackProps {
   content: string;
@@ -11,6 +12,7 @@ interface ParsedBack {
   irregularForms: string[];
   exampleSentence: string | null;
   translation: string | null;
+  imageName: string | null;
   other: string[];
 }
 
@@ -21,11 +23,17 @@ function parseBackContent(content: string): ParsedBack {
     irregularForms: [],
     exampleSentence: null,
     translation: null,
+    imageName: null,
     other: [],
   };
 
   for (const line of lines) {
     const trimmed = line.trim();
+    const imgMatch = trimmed.match(/^\[img:(.+)\]$/);
+    if (imgMatch) {
+      result.imageName = imgMatch[1];
+      continue;
+    }
     if (
       trimmed.startsWith('(v.)') ||
       trimmed.startsWith('(noun.)') ||
@@ -115,6 +123,14 @@ export function CardBack({ content, onSpeak, speaking }: CardBackProps) {
       )}
 
       {parsed.translation && <Text style={styles.translationText}>{parsed.translation}</Text>}
+
+      {parsed.imageName && (
+        <Image
+          source={{ uri: `${Paths.document.uri}reki_media/${parsed.imageName}` }}
+          style={styles.cardImage}
+          resizeMode="contain"
+        />
+      )}
 
       {parsed.other.length > 0 && (
         <View style={styles.section}>
@@ -220,5 +236,11 @@ const styles = StyleSheet.create({
     color: '#636E72',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  cardImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 10,
+    marginVertical: 10,
   },
 });
