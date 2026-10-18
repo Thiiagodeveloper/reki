@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -37,11 +38,9 @@ export function FlipCard({
     backfaceVisibility: 'hidden' as const,
   }));
 
-  if (isFlipped && rotation.value === 0) {
-    rotation.value = withTiming(1, { duration: 400 });
-  } else if (!isFlipped && rotation.value === 1) {
-    rotation.value = withTiming(0, { duration: 400 });
-  }
+  useEffect(() => {
+    rotation.value = withTiming(isFlipped ? 1 : 0, { duration: 400 });
+  }, [isFlipped, rotation]);
 
   return (
     <Pressable style={styles.container} onPress={!isFlipped ? onFlip : undefined}>
