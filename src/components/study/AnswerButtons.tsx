@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, Pressable, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Rating, type Grade } from 'ts-fsrs';
 import { formatInterval } from '../../lib/fsrs';
@@ -17,28 +17,39 @@ const buttons: { grade: Grade; label: string; color: string; bgColor: string }[]
   { grade: Rating.Easy, label: 'Easy', color: '#5A4BD1', bgColor: '#D5CFFF' },
 ];
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const PADDING = 12;
+const GAP = 6;
+const BUTTON_WIDTH = (SCREEN_WIDTH - PADDING * 2 - GAP * 3) / 4;
+
 function AnswerButtonsInner({ intervalPreview, onGrade, visible }: AnswerButtonsProps) {
   return (
-    <View
-      style={[styles.container, { opacity: visible ? 1 : 0 }]}
-      pointerEvents={visible ? 'auto' : 'none'}
-    >
+    <Pressable style={styles.container} disabled>
       {buttons.map(({ grade, label, color, bgColor }) => (
         <Pressable
           key={grade}
-          style={[styles.button, { backgroundColor: bgColor }]}
+          style={[
+            styles.button,
+            {
+              backgroundColor: visible ? bgColor : '#EEEEEE',
+              width: BUTTON_WIDTH,
+            },
+          ]}
           onPress={() => {
+            if (!visible) return;
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onGrade(grade);
           }}
         >
-          <Text style={[styles.label, { color }]}>{label}</Text>
-          <Text style={[styles.interval, { color }]}>
-            {intervalPreview?.[grade] ? formatInterval(intervalPreview[grade].interval) : ' '}
+          <Text style={[styles.label, { color: visible ? color : '#CCCCCC' }]}>{label}</Text>
+          <Text style={[styles.interval, { color: visible ? color : '#CCCCCC' }]}>
+            {visible && intervalPreview?.[grade]
+              ? formatInterval(intervalPreview[grade].interval)
+              : ' '}
           </Text>
         </Pressable>
       ))}
-    </View>
+    </Pressable>
   );
 }
 
@@ -47,13 +58,11 @@ export const AnswerButtons = React.memo(AnswerButtonsInner);
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
+    paddingHorizontal: PADDING,
     paddingBottom: 16,
-    gap: 6,
-    height: 56,
+    justifyContent: 'space-between',
   },
   button: {
-    flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
     alignItems: 'center',
