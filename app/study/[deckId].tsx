@@ -103,9 +103,11 @@ export default function StudyScreen() {
         onFlip={flipCard}
         onSpeakFront={() => speak(card.card.front)}
         onSpeakBack={() => {
-          const lines = card.card.back.split('\n').filter((l) => l.trim().length > 3);
-          const sentence = lines.find((l) => l.includes(' ')) || lines[0] || card.card.front;
-          speak(sentence);
+          const lines = card.card.back.split('\n').filter((l) => l.trim().length > 5);
+          const englishSentence = lines.find(
+            (l) => /^[A-Z]/.test(l.trim()) && l.includes(' ') && l.length > 10,
+          );
+          speak(englishSentence || card.card.front);
         }}
         speaking={speaking}
       />
