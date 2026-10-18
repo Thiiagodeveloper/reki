@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from 'react-native-reanimated';
+import { CardBack } from './CardBack';
 
 interface FlipCardProps {
   front: string;
@@ -45,7 +46,7 @@ export function FlipCard({
   return (
     <View style={styles.container}>
       <View style={styles.cardWrapper}>
-        {/* Back card - rendered first so front is on top */}
+        {/* Back card */}
         <Animated.View
           style={[styles.card, styles.backCard, backStyle]}
           pointerEvents={isFlipped ? 'auto' : 'none'}
@@ -54,32 +55,20 @@ export function FlipCard({
             contentContainerStyle={styles.cardContent}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.backHeader}>
-              <Text style={styles.label}>Answer</Text>
-              {onSpeakBack && (
-                <Pressable style={styles.speakBtnSmall} onPress={onSpeakBack}>
-                  <Text style={styles.speakIconSmall}>{speaking ? '🔊' : '🔈'}</Text>
-                </Pressable>
-              )}
-            </View>
-            <Text style={styles.cardText}>{back}</Text>
+            <CardBack content={back} onSpeak={onSpeakBack} speaking={speaking} />
           </ScrollView>
         </Animated.View>
 
-        {/* Front card - on top */}
+        {/* Front card */}
         <Animated.View
           style={[styles.card, styles.frontCard, frontStyle]}
           pointerEvents={isFlipped ? 'none' : 'auto'}
         >
           <Pressable style={styles.cardPressable} onPress={onFlip}>
-            <ScrollView
-              contentContainerStyle={styles.cardContent}
-              showsVerticalScrollIndicator={false}
-              scrollEnabled={false}
-            >
-              <Text style={styles.cardText}>{front}</Text>
+            <View style={styles.frontContent}>
+              <Text style={styles.frontText}>{front}</Text>
               <Text style={styles.tapHint}>Tap to reveal</Text>
-            </ScrollView>
+            </View>
           </Pressable>
           {onSpeakFront && (
             <Pressable
@@ -131,31 +120,25 @@ const styles = StyleSheet.create({
   backCard: {
     backgroundColor: '#F0EDFF',
   },
-  cardContent: {
-    flexGrow: 1,
+  frontContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
     paddingBottom: 70,
   },
-  backHeader: {
-    flexDirection: 'row',
+  cardContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    padding: 20,
   },
-  label: {
-    fontSize: 12,
+  frontText: {
+    fontSize: 28,
     fontWeight: '600',
-    color: '#6C5CE7',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  cardText: {
-    fontSize: 22,
     color: '#2D3436',
     textAlign: 'center',
-    lineHeight: 32,
+    lineHeight: 38,
   },
   tapHint: {
     fontSize: 13,
@@ -181,16 +164,5 @@ const styles = StyleSheet.create({
   },
   speakIcon: {
     fontSize: 22,
-  },
-  speakBtnSmall: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#E8E4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  speakIconSmall: {
-    fontSize: 14,
   },
 });

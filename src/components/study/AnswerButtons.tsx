@@ -30,11 +30,9 @@ export function AnswerButtons({ intervalPreview, onGrade }: AnswerButtonsProps) 
           onPress={() => handlePress(grade)}
         >
           <Text style={[styles.label, { color }]}>{label}</Text>
-          {intervalPreview && intervalPreview[grade] && (
-            <Text style={[styles.interval, { color }]}>
-              {formatInterval(intervalPreview[grade].interval)}
-            </Text>
-          )}
+          <Text style={[styles.interval, { color }]}>
+            {intervalPreview?.[grade] ? formatInterval(intervalPreview[grade].interval) : ''}
+          </Text>
         </Pressable>
       ))}
     </View>
