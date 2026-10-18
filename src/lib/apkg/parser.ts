@@ -1,5 +1,4 @@
-import JSZip from 'jszip';
-import { File, Paths } from 'expo-file-system';
+import { File, Paths, Directory } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 import { getDatabase } from '../database/connection';
 
@@ -50,141 +49,166 @@ export async function importApkg(fileUri: string): Promise<ImportResult> {
   const errors: string[] = [];
 
   const sourceFile = new File(fileUri);
-  const fileBase64 = await sourceFile.base64();
+  const tempDir = new Directory(Paths.cache, `apkg_import_${Date.now()}`);
+  tempDir.create();
 
-  const zip = await JSZip.loadAsync(fileBase64, { base64: true });
+  const tempZip = new File(tempDir, 'deck.zip');
+  sourceFile.copy(tempZip);
 
-  const dbFile = zip.file('collection.anki21') || zip.file('collection.anki2');
-  if (!dbFile) {
-    throw new Error('Invalid .apkg file: no collection database found');
-  }
-
-  const dbBuffer = await dbFile.async('uint8array');
-
-  const sqliteDir = new File(Paths.document, 'SQLite');
-  const dirInfo = Paths.info(sqliteDir.uri);
-  if (!dirInfo.exists) {
-    const { Directory } = await import('expo-file-system');
-    const dir = new Directory(Paths.document, 'SQLite');
-    dir.create();
-  }
-
-  const tempDbFile = new File(Paths.document, 'SQLite', TEMP_DB_NAME);
-  await tempDbFile.write(dbBuffer);
-
-  const ankiDb = await SQLite.openDatabaseAsync(TEMP_DB_NAME);
-
-  let deckName = 'Imported Deck';
-  const models: Record<string, AnkiModel> = {};
+  let ankiDb: SQLite.SQLiteDatabase | null = null;
 
   try {
-    const colRow = await ankiDb.getFirstAsync<{ models: string; decks: string }>(
-      'SELECT models, decks FROM col',
-    );
-    if (colRow) {
-      const decksJson = JSON.parse(colRow.decks);
-      const deckIds = Object.keys(decksJson).filter((id) => id !== '1');
-      if (deckIds.length > 0) {
-        deckName = decksJson[deckIds[0]].name;
-      } else if (decksJson['1']) {
-        deckName = decksJson['1'].name;
-      }
-
-      const modelsJson = JSON.parse(colRow.models);
-      for (const [id, model] of Object.entries(modelsJson)) {
-        const m = model as AnkiModel;
-        models[id] = { name: m.name, flds: m.flds };
-      }
+    const unzipResult = await unzipAnkiDb(tempZip, tempDir);
+    if (!unzipResult) {
+      throw new Error('Invalid .apkg file: no collection database found');
     }
-  } catch {
-    errors.push('Could not parse collection metadata, using defaults');
-  }
 
-  interface NoteRow {
-    id: number;
-    mid: number;
-    flds: string;
-    tags: string;
-  }
-
-  const notes: { id: number; mid: number; fields: string[]; tags: string }[] = [];
-  try {
-    const noteRows = await ankiDb.getAllAsync<NoteRow>('SELECT id, mid, flds, tags FROM notes');
-    for (const row of noteRows) {
-      notes.push({
-        id: row.id,
-        mid: row.mid,
-        fields: row.flds.split('\x1f'),
-        tags: row.tags.trim(),
-      });
+    const sqliteDir = new Directory(Paths.document, 'SQLite');
+    if (!Paths.info(sqliteDir.uri).exists) {
+      sqliteDir.create();
     }
-  } catch {
-    errors.push('Could not read notes table');
-  }
 
-  await ankiDb.closeAsync();
+    const tempDbDest = new File(Paths.document, 'SQLite', TEMP_DB_NAME);
+    unzipResult.copy(tempDbDest);
 
-  const db = await getDatabase();
-  const deckId = (
-    await db.runAsync(
-      'INSERT INTO decks (name, description) VALUES (?, ?)',
-      deckName,
-      `Imported from .apkg (${notes.length} notes)`,
-    )
-  ).lastInsertRowId;
+    ankiDb = await SQLite.openDatabaseAsync(TEMP_DB_NAME);
 
-  let cardsImported = 0;
-
-  for (const note of notes) {
-    const model = models[String(note.mid)];
-    const { front, back } = extractFrontBack(note.fields, model);
-
-    if (!front.trim()) continue;
+    let deckName = 'Imported Deck';
+    const models: Record<string, AnkiModel> = {};
 
     try {
-      const cardResult = await db.runAsync(
-        'INSERT INTO cards (deck_id, front, back, type, tags) VALUES (?, ?, ?, ?, ?)',
-        deckId,
-        front,
-        back,
-        'basic',
-        note.tags,
+      const colRow = await ankiDb.getFirstAsync<{ models: string; decks: string }>(
+        'SELECT models, decks FROM col',
       );
+      if (colRow) {
+        const decksJson = JSON.parse(colRow.decks);
+        const deckIds = Object.keys(decksJson).filter((id) => id !== '1');
+        if (deckIds.length > 0) {
+          deckName = decksJson[deckIds[0]].name;
+        } else if (decksJson['1']) {
+          deckName = decksJson['1'].name;
+        }
 
+        const modelsJson = JSON.parse(colRow.models);
+        for (const [id, model] of Object.entries(modelsJson)) {
+          const m = model as AnkiModel;
+          models[id] = { name: m.name, flds: m.flds };
+        }
+      }
+    } catch {
+      errors.push('Could not parse collection metadata, using defaults');
+    }
+
+    interface NoteRow {
+      id: number;
+      mid: number;
+      flds: string;
+      tags: string;
+    }
+
+    const notes: { id: number; mid: number; fields: string[]; tags: string }[] = [];
+    try {
+      const noteRows = await ankiDb.getAllAsync<NoteRow>('SELECT id, mid, flds, tags FROM notes');
+      for (const row of noteRows) {
+        notes.push({
+          id: row.id,
+          mid: row.mid,
+          fields: row.flds.split('\x1f'),
+          tags: row.tags.trim(),
+        });
+      }
+    } catch {
+      errors.push('Could not read notes table');
+    }
+
+    await ankiDb.closeAsync();
+    ankiDb = null;
+
+    const db = await getDatabase();
+    const deckId = (
       await db.runAsync(
-        "INSERT INTO reviews (card_id, state, due) VALUES (?, 'new', datetime('now'))",
-        cardResult.lastInsertRowId,
-      );
+        'INSERT INTO decks (name, description) VALUES (?, ?)',
+        deckName,
+        `Imported from .apkg (${notes.length} notes)`,
+      )
+    ).lastInsertRowId;
 
-      cardsImported++;
-    } catch {
-      errors.push(`Failed to import note ${note.id}`);
+    let cardsImported = 0;
+    const BATCH_SIZE = 200;
+
+    for (let i = 0; i < notes.length; i += BATCH_SIZE) {
+      const batch = notes.slice(i, i + BATCH_SIZE);
+      for (const note of batch) {
+        const model = models[String(note.mid)];
+        const { front, back } = extractFrontBack(note.fields, model);
+
+        if (!front.trim()) continue;
+
+        try {
+          const cardResult = await db.runAsync(
+            'INSERT INTO cards (deck_id, front, back, type, tags) VALUES (?, ?, ?, ?, ?)',
+            deckId,
+            front,
+            back,
+            'basic',
+            note.tags,
+          );
+
+          await db.runAsync(
+            "INSERT INTO reviews (card_id, state, due) VALUES (?, 'new', datetime('now'))",
+            cardResult.lastInsertRowId,
+          );
+
+          cardsImported++;
+        } catch {
+          errors.push(`Failed to import note ${note.id}`);
+        }
+      }
     }
-  }
 
-  let mediaImported = 0;
-  const mediaFile = zip.file('media');
-  if (mediaFile) {
+    return {
+      deckName,
+      cardsImported,
+      mediaImported: 0,
+      errors,
+    };
+  } finally {
+    if (ankiDb) {
+      try {
+        await ankiDb.closeAsync();
+      } catch {
+        /* ignore */
+      }
+    }
     try {
-      const mediaJson = JSON.parse(await mediaFile.async('string'));
-      mediaImported = Object.keys(mediaJson).length;
+      tempDir.delete();
     } catch {
-      errors.push('Could not process media files');
+      /* cleanup best effort */
+    }
+    try {
+      const tempDbFile = new File(Paths.document, 'SQLite', TEMP_DB_NAME);
+      tempDbFile.delete();
+    } catch {
+      /* cleanup best effort */
     }
   }
+}
 
-  try {
-    tempDbFile.delete();
-  } catch {
-    // cleanup is best effort
-  }
+async function unzipAnkiDb(zipFile: File, destDir: Directory): Promise<File | null> {
+  const JSZip = (await import('jszip')).default;
 
-  return {
-    deckName,
-    cardsImported,
-    mediaImported,
-    errors,
-  };
+  const zipBytes = await zipFile.bytes();
+  const zip = await JSZip.loadAsync(zipBytes);
+
+  const dbName = zip.file('collection.anki21') ? 'collection.anki21' : 'collection.anki2';
+  const dbEntry = zip.file(dbName);
+  if (!dbEntry) return null;
+
+  const dbBytes = await dbEntry.async('uint8array');
+  const outFile = new File(destDir, 'collection.db');
+  await outFile.write(dbBytes);
+
+  return outFile;
 }
 
 function extractFrontBack(fields: string[], model?: AnkiModel): { front: string; back: string } {
@@ -203,7 +227,7 @@ function extractFrontBack(fields: string[], model?: AnkiModel): { front: string;
   );
 
   let frontIdx = -1;
-  let backIndices: number[] = [];
+  const backIndices: number[] = [];
 
   for (let i = 0; i < fieldNames.length; i++) {
     const name = fieldNames[i];
