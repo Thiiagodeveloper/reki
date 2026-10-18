@@ -9,10 +9,10 @@ interface AnswerButtonsProps {
 }
 
 const buttons: { grade: Grade; label: string; color: string; bgColor: string }[] = [
-  { grade: Rating.Again, label: 'Again', color: '#FF7675', bgColor: '#FFF0F0' },
-  { grade: Rating.Hard, label: 'Hard', color: '#E17055', bgColor: '#FFF3ED' },
-  { grade: Rating.Good, label: 'Good', color: '#00B894', bgColor: '#E8FFF7' },
-  { grade: Rating.Easy, label: 'Easy', color: '#6C5CE7', bgColor: '#F0EDFF' },
+  { grade: Rating.Again, label: 'Again', color: '#FFFFFF', bgColor: '#FF7675' },
+  { grade: Rating.Hard, label: 'Hard', color: '#FFFFFF', bgColor: '#E17055' },
+  { grade: Rating.Good, label: 'Good', color: '#FFFFFF', bgColor: '#00B894' },
+  { grade: Rating.Easy, label: 'Easy', color: '#FFFFFF', bgColor: '#6C5CE7' },
 ];
 
 export function AnswerButtons({ intervalPreview, onGrade }: AnswerButtonsProps) {
@@ -42,23 +42,24 @@ export function AnswerButtons({ intervalPreview, onGrade }: AnswerButtonsProps) 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+    gap: 6,
   },
   button: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
+    minWidth: 70,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   interval: {
     fontSize: 11,
     marginTop: 2,
-    opacity: 0.7,
+    opacity: 0.85,
   },
 });
