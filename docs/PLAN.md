@@ -179,22 +179,22 @@ CREATE INDEX idx_study_sessions_deck_id ON study_sessions(deck_id);
 | ID   | Feature            | Descripcion                             | Prioridad |
 | ---- | ------------------ | --------------------------------------- | --------- |
 | F2.1 | Importador .apkg   | Parser de archivos Anki con media       | Hecho     |
-| F2.2 | Busqueda y Filtros | Buscar tarjetas, filtrar por tags/mazo  | Media     |
+| F2.2 | Busqueda y Filtros | Buscar tarjetas, filtrar por tags/mazo  | Hecho     |
 | F2.3 | Estadisticas       | Graficas de progreso, accuracy, heatmap | Hecho     |
 | F2.4 | Dark/Light Mode    | Temas con toggle automatico del sistema | Hecho     |
-| F2.5 | Notificaciones     | Recordatorios diarios de estudio        | Media     |
+| F2.5 | Notificaciones     | Recordatorios diarios de estudio        | Hecho     |
 
 ### Fase 3 - Idiomas + AI (Semanas 6-8)
 
 > Objetivo: Features especializadas para idiomas y asistencia IA
 
-| ID   | Feature            | Descripcion                            | Prioridad |
-| ---- | ------------------ | -------------------------------------- | --------- |
-| F3.1 | TTS                | Pronunciacion automatica en tarjetas   | Alta      |
-| F3.2 | Tarjetas Avanzadas | Cloze deletion, typing answer          | Media     |
-| F3.3 | AI: Generacion     | Generar flashcards desde texto/tema    | Alta      |
-| F3.4 | AI: Explicaciones  | IA explica conceptos al fallar tarjeta | Media     |
-| F3.5 | Sync Cloud         | Supabase para backup y multi-device    | Media     |
+| ID   | Feature           | Descripcion                            | Prioridad |
+| ---- | ----------------- | -------------------------------------- | --------- |
+| F3.1 | TTS               | Pronunciacion automatica en tarjetas   | Hecho     |
+| F3.2 | Imagenes .apkg    | Extraer y mostrar imagenes importadas  | Hecho     |
+| F3.3 | AI: Generacion    | Generar flashcards con Gemini (gratis) | Hecho     |
+| F3.4 | AI: Explicaciones | IA explica conceptos al fallar tarjeta | Hecho     |
+| F3.5 | Sync Cloud        | Supabase para backup y multi-device    | Pendiente |
 
 ### Fase 4 - Social + Polish
 
@@ -202,10 +202,10 @@ CREATE INDEX idx_study_sessions_deck_id ON study_sessions(deck_id);
 
 | ID   | Feature          | Descripcion                     | Prioridad |
 | ---- | ---------------- | ------------------------------- | --------- |
-| F4.1 | Exportar .apkg   | Exportar mazos para compartir   | Baja      |
-| F4.2 | Gamificacion     | XP, niveles, logros, rachas     | Baja      |
-| F4.3 | Widgets iOS      | Widget con tarjetas pendientes  | Baja      |
-| F4.4 | Mazo Marketplace | Browse/descargar mazos publicos | Baja      |
+| F4.1 | Exportar .apkg   | Exportar mazos para compartir   | Hecho     |
+| F4.2 | Gamificacion     | XP, niveles, logros, rachas     | Hecho     |
+| F4.3 | Widgets iOS      | Widget con tarjetas pendientes  | Pendiente |
+| F4.4 | Mazo Marketplace | Browse/descargar mazos publicos | Pendiente |
 
 ## 6. Git Workflow
 
