@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, Pressable, RefreshControl } from 'r
 import { router, useFocusEffect } from 'expo-router';
 
 import { decksDao, studySessionsDao } from '@/src/lib/database';
+import { getXpData, getXpForNextLevel, type XpData } from '@/src/lib/gamification';
 import { useThemeColors } from '@/src/hooks/useThemeColors';
 import type { Deck } from '@/src/types';
 
@@ -11,17 +12,20 @@ export default function HomeScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [todayStats, setTodayStats] = useState({ cardsStudied: 0, cardsCorrect: 0, totalTime: 0 });
   const [streak, setStreak] = useState(0);
+  const [xpData, setXpData] = useState<XpData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
-    const [allDecks, stats, currentStreak] = await Promise.all([
+    const [allDecks, stats, currentStreak, xp] = await Promise.all([
       decksDao.getAllDecks(),
       studySessionsDao.getTodayStats(),
       studySessionsDao.getStreak(),
+      getXpData(),
     ]);
     setDecks(allDecks);
     setTodayStats(stats);
     setStreak(currentStreak);
+    setXpData(xp);
   }, []);
 
   useFocusEffect(
@@ -60,6 +64,26 @@ export default function HomeScreen() {
           })}
         </Text>
       </View>
+
+      {xpData && xpData.totalXp > 0 && (
+        <View style={[styles.xpCard, { backgroundColor: c.primary + '15' }]}>
+          <View style={styles.xpRow}>
+            <Text style={[styles.xpLevel, { color: c.primary }]}>Level {xpData.level}</Text>
+            <Text style={[styles.xpTotal, { color: c.textSecondary }]}>{xpData.totalXp} XP</Text>
+          </View>
+          <View style={[styles.xpBar, { backgroundColor: c.border }]}>
+            <View
+              style={[
+                styles.xpBarFill,
+                {
+                  backgroundColor: c.primary,
+                  width: `${getXpForNextLevel(xpData).progress * 100}%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
+      )}
 
       <View style={styles.statsGrid}>
         {[
@@ -186,6 +210,33 @@ const styles = StyleSheet.create({
   doneEmoji: { fontSize: 40, marginBottom: 12 },
   doneText: { fontSize: 20, fontWeight: '600' },
   doneSubtext: { fontSize: 14, marginTop: 6 },
+  xpCard: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  xpRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  xpLevel: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  xpTotal: {
+    fontSize: 13,
+  },
+  xpBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  xpBarFill: {
+    height: 6,
+    borderRadius: 3,
+  },
   quickActions: {
     flexDirection: 'row',
     gap: 10,
