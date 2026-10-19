@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
 
 import { cardsDao, decksDao } from '@/src/lib/database';
+import { exportDeckAsApkg } from '@/src/lib/apkg';
 import type { Card, Deck } from '@/src/types';
 
 export default function DeckDetailScreen() {
@@ -112,15 +114,33 @@ export default function DeckDetailScreen() {
       <Stack.Screen
         options={{
           title: deck?.name ?? 'Deck',
-          headerRight: () =>
-            cards.length > 0 ? (
-              <Pressable
-                onPress={() => router.push(`/study/${deckId}`)}
-                style={styles.studyHeaderBtn}
-              >
-                <Text style={styles.studyHeaderBtnText}>Study</Text>
-              </Pressable>
-            ) : null,
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {cards.length > 0 && (
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      const uri = await exportDeckAsApkg(deckId, deck?.name ?? 'deck');
+                      await Sharing.shareAsync(uri, { mimeType: 'application/apkg' });
+                    } catch (e) {
+                      Alert.alert('Export Error', (e as Error).message);
+                    }
+                  }}
+                  style={styles.exportHeaderBtn}
+                >
+                  <Text style={styles.exportHeaderBtnText}>Export</Text>
+                </Pressable>
+              )}
+              {cards.length > 0 && (
+                <Pressable
+                  onPress={() => router.push(`/study/${deckId}`)}
+                  style={styles.studyHeaderBtn}
+                >
+                  <Text style={styles.studyHeaderBtnText}>Study</Text>
+                </Pressable>
+              )}
+            </View>
+          ),
         }}
       />
 
@@ -339,6 +359,18 @@ const styles = StyleSheet.create({
   },
   studyHeaderBtnText: {
     color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  exportHeaderBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#6C5CE7',
+  },
+  exportHeaderBtnText: {
+    color: '#6C5CE7',
     fontSize: 14,
     fontWeight: '600',
   },
