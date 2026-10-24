@@ -11,12 +11,7 @@ export function useSpeech() {
       .replace(/[,;]/g, ' ')
       .trim();
 
-    if (!cleanText) {
-      console.log('[Speech] Empty text, skipping');
-      return;
-    }
-
-    console.log('[Speech] Speaking:', cleanText.substring(0, 50), 'lang:', language);
+    if (!cleanText) return;
 
     Speech.stop();
     setSpeaking(true);
@@ -24,15 +19,8 @@ export function useSpeech() {
     Speech.speak(cleanText, {
       language,
       rate: 0.85,
-      onStart: () => console.log('[Speech] Started'),
-      onDone: () => {
-        console.log('[Speech] Done');
-        setSpeaking(false);
-      },
-      onError: (err) => {
-        console.error('[Speech] Error:', err);
-        setSpeaking(false);
-      },
+      onDone: () => setSpeaking(false),
+      onError: () => setSpeaking(false),
     });
   }, []);
 

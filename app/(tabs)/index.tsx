@@ -66,7 +66,10 @@ export default function HomeScreen() {
       </View>
 
       {xpData && xpData.totalXp > 0 && (
-        <View style={[styles.xpCard, { backgroundColor: c.primary + '15' }]}>
+        <Pressable
+          style={[styles.xpCard, { backgroundColor: c.primary + '15' }]}
+          onPress={() => router.push('/achievements' as never)}
+        >
           <View style={styles.xpRow}>
             <Text style={[styles.xpLevel, { color: c.primary }]}>Level {xpData.level}</Text>
             <Text style={[styles.xpTotal, { color: c.textSecondary }]}>{xpData.totalXp} XP</Text>
@@ -82,7 +85,7 @@ export default function HomeScreen() {
               ]}
             />
           </View>
-        </View>
+        </Pressable>
       )}
 
       <View style={styles.statsGrid}>
