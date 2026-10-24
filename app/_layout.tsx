@@ -66,6 +66,10 @@ function RootLayoutNav() {
           name="settings/index"
           options={{ title: 'Settings', presentation: 'modal' }}
         />
+        <Stack.Screen
+          name="achievements/index"
+          options={{ title: 'Achievements', presentation: 'modal' }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
