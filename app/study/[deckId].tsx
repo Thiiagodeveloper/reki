@@ -37,6 +37,20 @@ export default function StudyScreen() {
     startSession(id);
   }, [id]);
 
+  const complete = isComplete();
+  useEffect(() => {
+    if (complete && cardsStudied > 0) {
+      addXp(cardsStudied, cardsCorrect).then(
+        ({ xpGained: xp, newAchievements: achievements, data }) => {
+          setXpGained(xp);
+          setNewAchievements(achievements);
+          setXpLevel(data.level);
+          setLevelInfo(getXpForNextLevel(data));
+        },
+      );
+    }
+  }, [complete, cardsStudied, cardsCorrect]);
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -60,20 +74,7 @@ export default function StudyScreen() {
     );
   }
 
-  useEffect(() => {
-    if (isComplete() && cardsStudied > 0) {
-      addXp(cardsStudied, cardsCorrect).then(
-        ({ xpGained: xp, newAchievements: achievements, data }) => {
-          setXpGained(xp);
-          setNewAchievements(achievements);
-          setXpLevel(data.level);
-          setLevelInfo(getXpForNextLevel(data));
-        },
-      );
-    }
-  }, [isComplete(), cardsStudied, cardsCorrect]);
-
-  if (isComplete()) {
+  if (complete) {
     const accuracy = cardsStudied > 0 ? Math.round((cardsCorrect / cardsStudied) * 100) : 0;
     return (
       <View style={styles.centered}>
